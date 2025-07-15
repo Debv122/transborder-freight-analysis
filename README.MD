@@ -73,7 +73,7 @@ identify operational inefficiencies, assess environmental impacts, and provide d
   - Are there seasonal bottlenecks that need addressing?
   - How can technology and policy changes improve system efficiency?
 
- ###Tools
+ ### **Tools**
  For this project, the following tools will be used:
 
  Python: The primary programming language for data analysis.
