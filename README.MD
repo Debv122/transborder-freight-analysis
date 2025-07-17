@@ -1,88 +1,131 @@
-# TransBorderFreight Data Analysis Project
-This project analyzes the North American TransBorder freight data from the Bureau of Transportation Statistics (BTS). The goal is to uncover insights into freight movement patterns, identify operational inefficiencies, assess environmental impacts, and provide data-driven recommendations to improve the overall transportation system.
+## TransBorder Freight Data Analysis (2020)
+Overview
+This project analyzes the 2020 US TransBorder Freight Data using the CRISP-DM (Cross-Industry Standard Process for Data Mining) methodology. The goal is to identify inefficiencies, uncover patterns, and propose actionable recommendations to improve the efficiency, sustainability, and cost-effectiveness of cross-border freight operations between the US, Canada, and Mexico.
 
- # CRISP-DM Stage 1: Business Understanding
+## Table of Contents
+CRISP-DM Framework Implementation
+Analytical Questions
+Data Preprocessing
+Visualizations & Insights
+Conclusions & Actionable Recommendations
 
-## Project Overview
-**Project Name:** North American TransBorder Freight Data Analysis  
-**Data Source:** Bureau of Transportation Statistics (BTS)  
-**Timeline:** 2024  
-**Stakeholders:** Transportation analysts, policy makers, logistics companies, environmental agencies
 
-## Business Objectives
+## CRISP-DM Framework Implementation
+1. Business Understanding
+Objective: Enhance the efficiency, sustainability, and safety of North American trans-border freight.
+Key Focus: Identify inefficiencies, recognize trade patterns, and propose actionable solutions to optimize performance and minimize costs and environmental impact.
 
-### Primary Objective
-Analyze North American TransBorder freight data to uncover insights into freight movement patterns
-identify operational inefficiencies, assess environmental impacts, and provide data-driven recommendations to improve the overall transportation system.
+2. Data Understanding
+Data Source: Bureau of Transportation Statistics (BTS) 2020 TransBorder Freight Data.
+Data Structure: Monthly CSV files covering trade value, weight, mode of transportation, port/border, commodity, and more.
+Initial Exploration: Inspected for missing values, outliers, and consistency across months, ports, and modes.
 
-### Secondary Objectives
-1. **Operational Efficiency**: Identify bottlenecks and inefficiencies in cross-border freight movement
-2. **Economic Impact**: Understand trade patterns and economic relationships between US, Canada, and Mexico
-3. **Environmental Assessment**: Evaluate environmental impacts of different transportation modes
-4. **Policy Recommendations**: Provide insights for transportation policy improvements
-5. **Predictive Analytics**: Develop models to forecast freight movement trends
+3. Data Preparation
+Loading: All 2020 CSV files were loaded and concatenated into a single DataFrame.
 
-## Business Problems and Analytical Questions
+Cleaning:
+Standardized column names.
+Converted value and weight columns to numeric types.
+Filled missing numeric values with 0 and categorical values with 'Unknown'.
+Removed or flagged duplicate records.
 
-### 1. **Trade Flow Analysis**
-**Question:** What are the dominant trade corridors and freight movement patterns between the US, Canada, and Mexico?
-- **Sub-questions:**
-  - Which US states have the highest import/export volumes with Canada and Mexico?
-  - What are the seasonal patterns in trade flows?
-  - Which commodities dominate cross-border trade?
+Feature Engineering:
+Derived new features such as trade balance (export - import) and value per ton.
 
-### 2. **Transportation Mode Efficiency**
-**Question:** How do different transportation modes (truck, rail, vessel, air, pipeline) compare in terms of efficiency, cost, and volume capacity?
-- **Sub-questions:**
-  - Which transportation mode handles the highest volume of freight?
-  - What is the relationship between freight charges and transportation mode?
-  - How does transportation mode choice vary by commodity type?
+4. Modeling & Analysis
+Aggregated data by state, port, mode, commodity, and month.
+Identified inefficiencies such as zero-weight, high-value shipments and underutilized routes.
+Analyzed seasonal and modal trends.
 
-### 3. **Port and Border Crossing Performance**
-**Question:** Which ports and border crossings are the most critical for North American trade, and how do they perform in terms of volume and efficiency?
-- **Sub-questions:**
-  - Which ports handle the highest value and volume of goods?
-  - Are there capacity constraints at major border crossings?
-  - How does performance vary by geographic region?
+5. Evaluation
+Visualized key findings using bar charts, line plots, and boxplots.
+Assessed the impact of COVID-19 and other anomalies on trade flows.
 
-### 4. **Commodity-Specific Trade Patterns**
-**Question:** What are the trade patterns for different commodity categories, and which commodities drive the most economic value?
-- **Sub-questions:**
-  - Which commodities have the highest trade values?
-  - How do commodity trade patterns differ between Canada and Mexico?
-  - What are the seasonal variations in commodity trade?
+6. Deployment
+Documented insights and recommendations.
 
-### 5. **Economic Impact Assessment**
-**Question:** What is the economic impact of cross-border freight trade, and how has it evolved over time?
-- **Sub-questions:**
-  - What is the total trade value by country and year?
-  - How do freight charges correlate with trade values?
-  - Which trade relationships are most economically significant?
+## Exported summary tables and figures for reporting.
 
-### 6. **Environmental Impact Analysis**
-**Question:** What are the environmental implications of different transportation modes and trade routes?
-- **Sub-questions:**
-  - Which transportation modes are most environmentally efficient per unit of freight?
-  - How do containerized vs. non-containerized shipments impact efficiency?
-  - What are the carbon footprint implications of different trade routes?
+Analytical Questions
+Which U.S. states have the highest and lowest trans-border trade values with Canada and Mexico?
 
-### 7. **Operational Bottlenecks and Inefficiencies**
-**Question:** Where are the major operational bottlenecks in the North American freight system, and what recommendations can improve efficiency?
-- **Sub-questions:**
-  - Which routes or modes show signs of capacity constraints?
-  - Are there seasonal bottlenecks that need addressing?
-  - How can technology and policy changes improve system efficiency?
+What are the top ports of entry/exit for trans-border freight, and how do they compare in terms of trade volume and value?
 
- ### **Tools**
- For this project, the following tools will be used:
+Which modes of transportation dominate trans-border freight, and how does their usage vary by region or commodity?
 
- Python: The primary programming language for data analysis.
+What are the leading commodities traded across U.S. borders, and how do their trade values and volumes change over time?
 
- Pandas: A powerful Python library for data manipulation and analysis. It will be used for cleaning, transforming, and exploring the dataset.
+How do trade flows and values fluctuate throughout the year? Are there clear seasonal patterns or anomalies?
 
- Matplotlib & Seaborn: Python libraries for data visualization. These will be used to create charts and graphs to illustrate trends and patterns in the data.
+Where are the inefficiencies in freight flows, such as shipments with high value but zero or low reported weight, or underutilized routes?
 
- Jupyter Notebook: An interactive development environment that allows for combining code, visualizations, and narrative text. It is ideal for data exploration and presenting the analysis step-by-step.
+What actionable recommendations can be made to improve efficiency, sustainability, and cost-effectiveness in trans-border freight operations?
 
- Git & GitHub: Version control system to track changes and collaborate. All project files and progress will be managed on GitHub.
+Data Preprocessing
+File Discovery: Used Python’s glob and os libraries to recursively find and load all relevant CSV files for 2020.
+
+Data Cleaning:
+Standardized column names for consistency.
+Converted monetary and weight columns to numeric, removing symbols and commas.
+Filled missing values appropriately.
+Checked for and handled duplicate records.
+
+Feature Engineering:
+Created new columns for trade balance and value per ton where possible.
+
+Validation:
+Checked for missing months, ports, and modes to ensure data completeness.
+
+Visualized distributions to spot outliers and anomalies.
+Visualizations & Insights
+
+Top States by Trade Value:
+Bar charts highlighted Texas, Michigan, and California as the leading states in cross-border trade.
+
+Top Ports:
+Laredo and Detroit emerged as the most significant ports by trade value.
+
+Trade by Mode:
+Trucking dominated, followed by rail and vessel, with clear visual representation of modal shares.
+
+Commodity Analysis:
+Vehicles, mineral fuels, and machinery were the top commodities traded.
+
+Monthly Trends:
+Line plots revealed seasonal patterns and the impact of COVID-19, with a noticeable dip in early 2020 and recovery later in the year.
+
+Inefficiency Analysis:
+Boxplots and summary tables identified shipments with zero or low weight but high value, suggesting potential reporting or operational inefficiencies.
+
+Congestion & Under-utilization:
+Analysis of shipment weights and values by route and mode revealed congested and underutilized corridors.
+
+## Conclusions & Actionable Recommendations
+Key Findings
+Texas, Michigan, and California are the top states for cross-border trade.
+Laredo and Detroit are the busiest ports.
+Trucking is the dominant mode, but also the largest contributor to carbon emissions.
+Significant inefficiencies exist, such as high-value shipments with zero reported weight and underutilized routes.
+Seasonal patterns and external events (e.g., COVID-19) significantly impact trade flows.
+
+## **Actionable Recommendations**
+Invest in rail infrastructure and underutilized routes to reduce congestion and environmental impact.
+
+Encourage greener fuel alternatives and carbon reduction strategies, especially for trucking.
+
+Optimize rail and vessel transport for cost-effective and sustainable trade.
+
+Implement AI-driven logistics for better freight management and real-time monitoring.
+
+Harmonize trade policies to minimize delays and inefficiencies.
+Improve data collection and reporting to reduce anomalies such as zero-weight, high-value shipments.
+
+## **Conclusion**
+
+References
+Bureau of Transportation Statistics (BTS)
+TransBorder Freight Data Analysis Example
+This project demonstrates the power of data-driven analysis in optimizing cross-border freight operations, supporting both economic and environmental goals.
+
+
 
