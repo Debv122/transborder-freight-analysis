@@ -18,7 +18,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # Set style for better visualizations
-plt.style.use('seaborn-v0_8)
+plt.style.use('seaborn-v0_8')
 sns.set_palette("husl")
 
 class TransBorderAnalyzer:
