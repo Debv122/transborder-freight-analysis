@@ -73,13 +73,37 @@ def load_all_data(base_dir: str) -> pd.DataFrame:
 	return data
 
 # -------------------------------
-# Sidebar Controls
+# Startup + Diagnostics
 # -------------------------------
-base_dir = os.path.dirname(__file__)
-
-data = load_all_data(base_dir)
-
 st.title("TransBorder Freight Analysis")
+
+try:
+	base_dir = os.path.dirname(__file__)
+	env_info = {
+		"__file__": __file__,
+		"base_dir": base_dir,
+		"cwd": os.getcwd(),
+	}
+	data = load_all_data(base_dir)
+except Exception as e:
+	st.error("Failed during startup or data loading.")
+	st.exception(e)
+	st.stop()
+
+with st.expander("Diagnostics"):
+	st.write(env_info)
+	# Count CSVs discovered
+	counts = {}
+	for y in ['2020', '2021', '2022', '2023', '2024']:
+		p = os.path.join(base_dir, y)
+		counts[y] = sum(1 for _ in glob.iglob(os.path.join(p, '**', '*.csv'), recursive=True)) if os.path.exists(p) else 0
+	st.write({"csv_counts": counts})
+	st.write({"rows": len(data), "cols": len(data.columns) if not data.empty else 0})
+	if not data.empty:
+		st.write("Head:")
+		st.dataframe(data.head(5))
+		st.write("Columns:")
+		st.code(", ".join(data.columns.tolist())[:2000])
 
 if data.empty:
 	st.error("No CSV files found. Ensure the year folders exist and contain CSVs.")
@@ -92,7 +116,9 @@ value_col = 'value' if 'value' in data.columns else None
 weight_col = 'shipwt' if 'shipwt' in data.columns else None
 commodity_col = next((c for c in data.columns if 'commodity' in c), None)
 
-# Sidebar filters
+# -------------------------------
+# Sidebar Controls
+# -------------------------------
 with st.sidebar:
 	st.header("Filters")
 	years = sorted([y for y in data['year'].unique().tolist() if str(y) != 'Unknown']) if 'year' in data.columns else []
@@ -104,104 +130,111 @@ with st.sidebar:
 	states = sorted(data[state_col].unique().tolist()) if state_col else []
 	selected_states = st.multiselect("State", states, default=states[:10] if len(states) > 10 else states)
 
-	st.markdown("---")
-	st.caption("Data columns available:")
-	st.code(", ".join(data.columns.tolist())[:1000])
-
-# Apply filters
-filtered = data.copy()
-if selected_years and 'year' in filtered.columns:
-	filtered = filtered[filtered['year'].astype(str).isin([str(y) for y in selected_years])]
-if selected_modes and mode_col:
-	filtered = filtered[filtered[mode_col].isin(selected_modes)]
-if selected_states and state_col:
-	filtered = filtered[filtered[state_col].isin(selected_states)]
+# Apply filters safely
+filtered = data
+try:
+	if selected_years and 'year' in filtered.columns:
+		filtered = filtered[filtered['year'].astype(str).isin([str(y) for y in selected_years])]
+	if selected_modes and mode_col:
+		filtered = filtered[filtered[mode_col].isin(selected_modes)]
+	if selected_states and state_col:
+		filtered = filtered[filtered[state_col].isin(selected_states)]
+except Exception as e:
+	st.error("Error applying filters.")
+	st.exception(e)
 
 # -------------------------------
 # KPI Cards
 # -------------------------------
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-	total_trade = float(filtered[value_col].sum()) if value_col else 0.0
-	st.metric("Total Trade Value", f"${total_trade:,.0f}")
-with col2:
-	total_weight = float(filtered[weight_col].sum()) if weight_col else 0.0
-	st.metric("Total Weight", f"{total_weight:,.0f}")
-with col3:
-	records = int(len(filtered))
-	st.metric("Records", f"{records:,}")
-with col4:
-	zero_weight = int((filtered[weight_col] == 0).sum()) if weight_col in filtered.columns else 0
-	st.metric("Zero-weight Shipments", f"{zero_weight:,}")
+try:
+	col1, col2, col3, col4 = st.columns(4)
+	with col1:
+		total_trade = float(filtered[value_col].sum()) if value_col and value_col in filtered.columns else 0.0
+		st.metric("Total Trade Value", f"${total_trade:,.0f}")
+	with col2:
+		total_weight = float(filtered[weight_col].sum()) if weight_col and weight_col in filtered.columns else 0.0
+		st.metric("Total Weight", f"{total_weight:,.0f}")
+	with col3:
+		records = int(len(filtered))
+		st.metric("Records", f"{records:,}")
+	with col4:
+		zero_weight = int((filtered[weight_col] == 0).sum()) if weight_col and weight_col in filtered.columns else 0
+		st.metric("Zero-weight Shipments", f"{zero_weight:,}")
+except Exception as e:
+	st.error("Error computing KPIs.")
+	st.exception(e)
 
 st.markdown("---")
 
 # -------------------------------
-# Charts
+# Charts with guards
 # -------------------------------
-# Monthly Trend
-if 'month' in filtered.columns and value_col:
-	monthly = (
-		filtered.groupby('month')[value_col]
-		.sum()
-		.reset_index()
-		.sort_values('month')
-	)
-	monthly['value_billion'] = monthly[value_col] / 1e9
-	fig = px.line(
-		monthly,
-		x='month', y='value_billion', markers=True,
-		title='Monthly Trade Value (Billions)'
-	)
-	st.plotly_chart(fig, use_container_width=True)
+try:
+	# Monthly Trend
+	if 'month' in filtered.columns and value_col and value_col in filtered.columns:
+		monthly = (
+			filtered.groupby('month')[value_col]
+			.sum()
+			.reset_index()
+			.sort_values('month')
+		)
+		monthly['value_billion'] = monthly[value_col] / 1e9
+		fig = px.line(
+			monthly,
+			x='month', y='value_billion', markers=True,
+			title='Monthly Trade Value (Billions)'
+		)
+		st.plotly_chart(fig, use_container_width=True)
 
-# Top States
-if state_col and value_col and state_col in filtered.columns:
-	state_summary = (
-		filtered.groupby(state_col)[value_col]
-		.sum()
-		.sort_values(ascending=False)
-		.head(15)
-		.reset_index()
-	)
-	state_summary['value_billion'] = state_summary[value_col] / 1e9
-	fig = px.bar(
-		state_summary, x='value_billion', y=state_col, orientation='h',
-		title='Top States by Trade Value (Billions)'
-	)
-	st.plotly_chart(fig, use_container_width=True)
+	# Top States
+	if state_col and value_col and state_col in filtered.columns and value_col in filtered.columns:
+		state_summary = (
+			filtered.groupby(state_col)[value_col]
+			.sum()
+			.sort_values(ascending=False)
+			.head(15)
+			.reset_index()
+		)
+		state_summary['value_billion'] = state_summary[value_col] / 1e9
+		fig = px.bar(
+			state_summary, x='value_billion', y=state_col, orientation='h',
+			title='Top States by Trade Value (Billions)'
+		)
+		st.plotly_chart(fig, use_container_width=True)
 
-# Mode Distribution
-if mode_col and value_col and mode_col in filtered.columns:
-	mode_summary = (
-		filtered.groupby(mode_col)[value_col]
-		.sum()
-		.reset_index()
-	)
-	mode_summary['value_billion'] = mode_summary[value_col] / 1e9
-	fig = px.bar(
-		mode_summary, x=mode_col, y='value_billion',
-		title='Trade Value by Transportation Mode (Billions)'
-	)
-	st.plotly_chart(fig, use_container_width=True)
+	# Mode Distribution
+	if mode_col and value_col and mode_col in filtered.columns and value_col in filtered.columns:
+		mode_summary = (
+			filtered.groupby(mode_col)[value_col]
+			.sum()
+			.reset_index()
+		)
+		mode_summary['value_billion'] = mode_summary[value_col] / 1e9
+		fig = px.bar(
+			mode_summary, x=mode_col, y='value_billion',
+			title='Trade Value by Transportation Mode (Billions)'
+		)
+		st.plotly_chart(fig, use_container_width=True)
 
-# Top Commodities
-if commodity_col and value_col and commodity_col in filtered.columns:
-	commodity_summary = (
-		filtered.groupby(commodity_col)[value_col]
-		.sum()
-		.sort_values(ascending=False)
-		.head(15)
-		.reset_index()
-	)
-	commodity_summary['value_billion'] = commodity_summary[value_col] / 1e9
-	fig = px.bar(
-		commodity_summary, x='value_billion', y=commodity_col, orientation='h',
-		title='Top Commodities by Trade Value (Billions)'
-	)
-	st.plotly_chart(fig, use_container_width=True)
+	# Top Commodities
+	if commodity_col and value_col and commodity_col in filtered.columns and value_col in filtered.columns:
+		commodity_summary = (
+			filtered.groupby(commodity_col)[value_col]
+			.sum()
+			.sort_values(ascending=False)
+			.head(15)
+			.reset_index()
+		)
+		commodity_summary['value_billion'] = commodity_summary[value_col] / 1e9
+		fig = px.bar(
+			commodity_summary, x='value_billion', y=commodity_col, orientation='h',
+			title='Top Commodities by Trade Value (Billions)'
+		)
+		st.plotly_chart(fig, use_container_width=True)
+except Exception as e:
+	st.error("Error rendering charts.")
+	st.exception(e)
 
-# Notes
 with st.expander("Notes"):
 	st.write(
 		"""
