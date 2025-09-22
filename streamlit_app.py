@@ -24,7 +24,13 @@ def load_all_data(base_dir: str) -> pd.DataFrame:
 	]
 	csv_files = []
 	for pattern in csv_patterns:
-		csv_files.extend(glob.glob(pattern, recursive=True))
+		found = glob.glob(pattern, recursive=True)
+		csv_files.extend(found)
+		# Debug: show what files were found for each pattern
+		if found:
+			print(f"Pattern {pattern} found {len(found)} files")
+	
+	print(f"Total CSV files found: {len(csv_files)}")
 
 	dfs = []
 	for file in csv_files:
@@ -78,6 +84,7 @@ def load_all_data(base_dir: str) -> pd.DataFrame:
 st.title("TransBorder Freight Analysis")
 
 try:
+	# Use current directory since year folders are in the same directory as the script
 	base_dir = os.path.dirname(__file__)
 	env_info = {
 		"__file__": __file__,
