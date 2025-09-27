@@ -15,6 +15,9 @@ st.set_page_config(page_title="TransBorder Freight Analysis", layout="wide")
 # -------------------------------
 @st.cache_data(show_spinner=True)
 def load_all_data(base_dir: str) -> pd.DataFrame:
+	"""
+	Load all CSV files from year folders with improved error handling.
+	"""
 	csv_patterns = [
 		os.path.join(base_dir, '2020', '**', '*.csv'),
 		os.path.join(base_dir, '2021', '**', '*.csv'),
@@ -23,28 +26,54 @@ def load_all_data(base_dir: str) -> pd.DataFrame:
 		os.path.join(base_dir, '2024', '**', '*.csv'),
 	]
 	csv_files = []
-	for pattern in csv_patterns:
-		found = glob.glob(pattern, recursive=True)
-		csv_files.extend(found)
-		# Debug: show what files were found for each pattern
-		if found:
-			print(f"Pattern {pattern} found {len(found)} files")
+	errors = []
 	
-	print(f"Total CSV files found: {len(csv_files)}")
+	for pattern in csv_patterns:
+		try:
+			found = glob.glob(pattern, recursive=True)
+			csv_files.extend(found)
+			if found:
+				st.info(f"Found {len(found)} CSV files in {pattern}")
+		except Exception as e:
+			errors.append(f"Error searching {pattern}: {e}")
+	
+	if errors:
+		st.warning("Some errors occurred while searching for files:")
+		for error in errors:
+			st.warning(error)
+	
+	if not csv_files:
+		st.error("No CSV files found in any year folders.")
+		return pd.DataFrame()
 
 	dfs = []
+	load_errors = []
+	
 	for file in csv_files:
 		try:
 			df = pd.read_csv(file, low_memory=False)
 			df['source_file'] = os.path.relpath(file, base_dir)
 			dfs.append(df)
 		except Exception as e:
-			st.warning(f"Error loading {file}: {e}")
+			load_errors.append(f"Error loading {file}: {e}")
+	
+	if load_errors:
+		st.warning("Some files could not be loaded:")
+		for error in load_errors[:5]:  # Show first 5 errors
+			st.warning(error)
+		if len(load_errors) > 5:
+			st.warning(f"... and {len(load_errors) - 5} more errors")
 
 	if not dfs:
+		st.error("No CSV files could be loaded successfully.")
 		return pd.DataFrame()
 
-	data = pd.concat(dfs, ignore_index=True)
+	try:
+		data = pd.concat(dfs, ignore_index=True)
+		st.success(f"Successfully loaded {len(data)} records from {len(dfs)} files")
+	except Exception as e:
+		st.error(f"Error concatenating dataframes: {e}")
+		return pd.DataFrame()
 
 	# Standardize columns
 	data.columns = data.columns.str.strip().str.lower().str.replace(' ', '_')
@@ -91,6 +120,15 @@ try:
 		"base_dir": base_dir,
 		"cwd": os.getcwd(),
 	}
+	
+	# Check if year folders exist
+	year_folders = ['2020', '2021', '2022', '2023', '2024']
+	existing_folders = [year for year in year_folders if os.path.exists(os.path.join(base_dir, year))]
+	
+	if not existing_folders:
+		st.error("No data folders found. Please ensure the year folders (2020-2024) are in the same directory as this script.")
+		st.stop()
+	
 	data = load_all_data(base_dir)
 except Exception as e:
 	st.error("Failed during startup or data loading.")
