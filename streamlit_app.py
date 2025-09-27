@@ -16,15 +16,17 @@ st.set_page_config(page_title="TransBorder Freight Analysis", layout="wide")
 @st.cache_data(show_spinner=True)
 def load_all_data(base_dir: str) -> pd.DataFrame:
 	"""
-	Load all CSV files from year folders with improved error handling.
+	Load all CSV files from available year folders with improved error handling.
 	"""
-	csv_patterns = [
-		os.path.join(base_dir, '2020', '**', '*.csv'),
-		os.path.join(base_dir, '2021', '**', '*.csv'),
-		os.path.join(base_dir, '2022', '**', '*.csv'),
-		os.path.join(base_dir, '2023', '**', '*.csv'),
-		os.path.join(base_dir, '2024', '**', '*.csv'),
-	]
+	# Only search for existing year folders
+	year_folders = ['2020', '2021', '2022', '2023', '2024']
+	existing_folders = [year for year in year_folders if os.path.exists(os.path.join(base_dir, year))]
+	
+	if not existing_folders:
+		return pd.DataFrame()
+	
+	# Create patterns only for existing folders
+	csv_patterns = [os.path.join(base_dir, year, '**', '*.csv') for year in existing_folders]
 	csv_files = []
 	errors = []
 	
@@ -126,8 +128,14 @@ try:
 	existing_folders = [year for year in year_folders if os.path.exists(os.path.join(base_dir, year))]
 	
 	if not existing_folders:
-		st.error("No data folders found. Please ensure the year folders (2020-2024) are in the same directory as this script.")
+		st.error("No data folders found. Please ensure at least one year folder (2020-2024) is in the same directory as this script.")
 		st.stop()
+	
+	# Show which years are available
+	if len(existing_folders) < len(year_folders):
+		missing_years = [year for year in year_folders if year not in existing_folders]
+		st.warning(f"Some year folders are missing: {missing_years}")
+		st.info(f"Available data: {existing_folders}")
 	
 	data = load_all_data(base_dir)
 except Exception as e:
@@ -137,12 +145,14 @@ except Exception as e:
 
 with st.expander("Diagnostics"):
 	st.write(env_info)
-	# Count CSVs discovered
+	# Count CSVs discovered for available years only
 	counts = {}
-	for y in ['2020', '2021', '2022', '2023', '2024']:
+	available_years = [y for y in ['2020', '2021', '2022', '2023', '2024'] if os.path.exists(os.path.join(base_dir, y))]
+	for y in available_years:
 		p = os.path.join(base_dir, y)
-		counts[y] = sum(1 for _ in glob.iglob(os.path.join(p, '**', '*.csv'), recursive=True)) if os.path.exists(p) else 0
+		counts[y] = sum(1 for _ in glob.iglob(os.path.join(p, '**', '*.csv'), recursive=True))
 	st.write({"csv_counts": counts})
+	st.write(f"Available years: {available_years}")
 	st.write({"rows": len(data), "cols": len(data.columns) if not data.empty else 0})
 	if not data.empty:
 		st.write("Head:")
